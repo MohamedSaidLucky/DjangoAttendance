@@ -20,6 +20,7 @@ class Employee(models.Model):
         return '%s %s'%(self.first_name,self.last_name)
 
 class Branch(models.Model):
+    id = models.CharField(primary_key=True,max_length=10,verbose_name="code")
     title = models.CharField(max_length=50,null=True)
     sort = models.IntegerField(null=True, blank=True)
     def __str__(self):
