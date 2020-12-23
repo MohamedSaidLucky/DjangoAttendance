@@ -39,7 +39,9 @@ class MyFilter(admin.SimpleListFilter):
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
 
-    
+    save_as = True
+    #save_as_continue = False
+    save_on_top = True
 
     # organizing fields in admin add/modify
     fieldsets=(
@@ -68,9 +70,11 @@ class EmployeeAdmin(admin.ModelAdmin):
     list_filter = ('branch','department','pph',MyFilter)
 
     #display List
-    list_display = ['display_full_name','display_branch_link','display_department_link','pph']
+    list_display = ['display_full_name','display_branch_link','display_department_link','sort','pph','pont']
     
-    list_editable = ('pph',)
+    list_editable = ('sort','pont',)
+
+    search_fields = ('first_name','last_name','department__title')
 
     def display_full_name(self,obj):
         return "%s %s"%(obj.first_name,obj.last_name)
@@ -86,7 +90,7 @@ class EmployeeAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', url,obj.branch)
     display_branch_link.short_description = 'Branch'
 
-
+    
     
     def display_department_link(self,obj):
         #count = obj.branch.employee_set.count()
