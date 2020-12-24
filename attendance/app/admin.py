@@ -1,9 +1,12 @@
 from django.contrib import admin
-from .models import Employee,Department,Branch
-
+from .models import Employee,Department,Branch,DummyModel
+from django.urls import path
 from django.utils.html import conditional_escape, format_html
 from django.urls import reverse
 from django.utils.http import urlencode
+from .views import my_custom_view
+from django.contrib import messages
+
 
 # Register your models here.
 
@@ -72,7 +75,7 @@ class EmployeeAdmin(admin.ModelAdmin):
     #display List
     list_display = ['display_full_name','display_branch_link','display_department_link','sort','pph','pont']
     
-    list_editable = ('sort','pont',)
+    list_editable = ('sort','pont','pph')
 
     search_fields = ('first_name','last_name','department__title')
 
@@ -102,6 +105,37 @@ class EmployeeAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', url,obj.department)
     display_department_link.short_description = 'Department'
 
+    def save_model(self, request, obj, form, change):
+        
+
+        emp = Employee.objects.get(id=obj.id)
+        print ('emp pph',emp.pph)
+        print ('emp pont',emp.pont)
+        print ('obj pph',obj.pph)
+        print ('obj pont',obj.pont)
+
+
+        # Secure Fields
+        if change:
+
+            if not request.user.has_perm('app.change_pph_employee') and obj.pph != emp.pph:
+                obj.pph = emp.pph
+                messages.add_message(request, messages.ERROR, 'لا يمكنك تعديل ساعة الموظف')
+                
+            if not request.user.has_perm('app.change_pont_employee') and obj.pont != emp.pont:
+                obj.pont = emp.pont
+                messages.add_message(request, messages.ERROR, 'لا يمكنك تعديل التبس')
+
+
+        
+        obj.user = request.user
+        print('change pph', not request.user.has_perm('app.change_pph_employee'))
+        print('change pont', not request.user.has_perm('app.change_pont_employee'))
+        print ('obj',obj)
+
+        super().save_model(request, obj, form, change)
+
+        
     
 
 @admin.register(Department)
@@ -122,6 +156,15 @@ class BranchAdmin(admin.ModelAdmin):
         return "[%s] %s"%(obj.id,obj.title)
     show_code.short_description= "branch"
 
-    
-    
 
+
+class DummyModelAdmin(admin.ModelAdmin):
+    model = DummyModel
+
+    def get_urls(self):
+        view_name = '{}_{}_changelist'.format(
+            self.model._meta.app_label, self.model._meta.model_name)
+        return [
+            path('my_admin_path/', my_custom_view, name=view_name),
+        ]
+admin.site.register(DummyModel, DummyModelAdmin)
